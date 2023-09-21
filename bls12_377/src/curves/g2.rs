@@ -26,6 +26,7 @@ impl CurveConfig for Config {
 
     /// COFACTOR =
     /// 7923214915284317143930293550643874566881017850177945424769256759165301436616933228209277966774092486467289478618404761412630691835764674559376407658497
+
     #[rustfmt::skip]
     const COFACTOR: &'static [u64] = &[
         0x0000000000000001,
@@ -235,5 +236,76 @@ mod test {
             assert!(optimised.is_on_curve());
             assert!(optimised.is_in_correct_subgroup_assuming_on_curve());
         }
+    }
+
+    #[test]
+    fn test_cofactor_clearing2() {
+        let h_eff = &[
+            0x1e34800000000000,
+            0xcf664765b0000003,
+            0x8e8e73ad8a538800,
+            0x78ba279637388559,
+            0xb85860aaaad29276,
+            0xf7ee7c4b03103b45,
+            0x8f6ade35a5c7d769,
+            0xa951764c46f4edd2,
+            0x53648d3d9502abfb,
+            0x1f60243677e306,
+        ];
+
+        // 2184281851404362281745678896208201217529168937398889823122388972044920455466061193066642594716782535371685695462977913482353329054629394593897466405313745845350270778934587237043056714711040
+        // 1f60243677e30653648d3d9502abfba951764c46f4edd28f6ade35a5c7d769f7ee7c4b03103b45b85860aaaad2927678ba2796373885598e8e73ad8a538800cf664765b00000031e34800000000000
+
+        let px = Fq2::new(
+			MontFp!("11557587920523491141644419707107701825369829189735996211224349772154031241646267060786257002785197434537196170844"),
+			MontFp!("98424027675223431337107965539915101552446204639976823374383108542028444907490923811542789977514989253907795276305"),
+		);
+        let py = Fq2::new(
+			MontFp!("67488721414241249285583087059813421705477241251154159487323814878342587865316881194694651923749679362160030981714"),
+			MontFp!("11869671823870902068247566609450987730043725897504844254681642638329926836997139786821777457585828654511868406877"),
+		);
+
+        use ark_ff::PrimeField;
+        // let hh = vec![1, 20, 136, 95, 50, 64, 0, 0, 3, 30, 52, 128, 0, 0, 0, 0, 1];
+        let hh = vec![
+            31, 96, 36, 54, 119, 227, 6, 83, 100, 141, 61, 149, 2, 171, 251, 169, 81, 118, 76, 70,
+            244, 237, 210, 143, 106, 222, 53, 165, 199, 215, 105, 247, 238, 124, 75, 3, 16, 59, 69,
+            184, 88, 96, 170, 170, 210, 146, 118, 120, 186, 39, 150, 55, 56, 133, 89, 142, 142,
+            115, 173, 138, 83, 136, 0, 207, 102, 71, 101, 176, 0, 0, 3, 30, 52, 128, 0, 0, 0, 0, 0,
+        ];
+
+        use ark_ff::{BigInt, BigInteger};
+
+        // let h: BigInt<13> =
+        // BigInt!("2184281851404362281745678896208201217529168937398889823122388972044920455466061193066642594716782535371685695462977913482353329054629394593897466405313745845350270778934587237043056714711040"
+        // );
+        let s = String::from("2184281851404362281745678896208201217529168937398889823122388972044920455466061193066642594716782535371685695462977913482353329054629394593897466405313745845350270778934587237043056714711040");
+        let h: BigInt<13> = BigInt::from(s);
+        println!("config: {:?}", g2::Config::COFACTOR);
+        println!("h        : {:?}", &h);
+        println!("h.be     : {:?}", &h.to_bytes_be());
+        let r = Fr::from_be_bytes_mod_order(&h.to_bytes_be());
+
+        // use std::str::FromStr;
+        // let rr = Fr::from_str(&String::from("0x1f60243677e30653648d3d9502abfba951764c46f4edd28f6ade35a5c7d769f7ee7c4b03103b45b85860aaaad2927678ba2796373885598e8e73ad8a538800cf664765b00000031e34800000000000"));
+        let rr = Fr::from_be_bytes_mod_order(&hh);
+        println!("r        : {:?}", &r);
+        println!("r.be     : {:?}", &r.0.to_bytes_be());
+        println!("rr       : {:?}", &rr);
+        println!("rr.be    : {:?}", &rr.0.to_bytes_be());
+        let p = G2Affine::new_unchecked(px, py);
+        println!("p        : {:?}", &p);
+        let optimised = p.clear_cofactor();
+        let naive_mod = p * r;
+        let naive_big = p.mul_bigint(&h);
+        let naive_ccc = p.mul_bigint(&g2::Config::COFACTOR);
+        let naive = g2::Config::mul_affine(&p, h_eff);
+        println!("optimised: {:?}", optimised.into_group().into_affine());
+        println!("naive    : {:?}", naive.into_affine());
+        println!("naive_mod: {:?}", naive_mod.into_affine());
+        println!("naive_big: {:?}", naive_big.into_affine());
+        println!("naive_ccc: {:?}", naive_ccc.into_affine());
+        assert_eq!(optimised.into_group(), naive);
+        assert_eq!(optimised.into_group(), naive_mod);
     }
 }

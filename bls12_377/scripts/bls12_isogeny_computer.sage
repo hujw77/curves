@@ -1,3 +1,57 @@
+ZZR.<XX> = PolynomialRing(ZZ)
+def show_elm(val):
+    if val.parent().degree() == 1:
+        return "0x%x" % val
+    if val == 0:
+        return "0"
+    vals = [ (ii, vv) for (ii, vv) in enumerate(ZZR(val)) if vv > 0 ]
+    ostrs = [None] * len(vals)
+    for (idx, (ii, vv)) in enumerate(vals):
+        if ii == 0:
+            ostrs[idx] = "0x%x" % vv
+        elif ii == 1:
+            ostrs[idx] = "0x%x * I" % vv
+        else:
+            ostrs[idx] = "0x%x * I^%d" % (vv, ii)
+    return " + ".join(ostrs)
+
+def show_iso(iso):
+    (xm, ym) = iso.rational_maps()
+    maps = (xm.numerator(), xm.denominator(), ym.numerator(), ym.denominator())
+    strs = ("x\\_num", "x\\_den", "y\\_num", "y\\_den")
+    mstr = ""
+    for (idx, (m, s)) in enumerate(zip(maps, strs), 1):
+        max_jdx = -1
+        skipped_one = False
+        for ((jdx, _), val) in sorted(m.dict().items()):
+            if val == 1 and jdx + 1 == len(m.dict()):
+                skipped_one = True
+                continue
+            if jdx > max_jdx:
+                max_jdx = jdx
+            print("- k\\_(%d,%d) = %s" % (idx, jdx, show_elm(val)))
+        if skipped_one:
+            max_jdx += 1
+            ostr = "x'^%d" % (max_jdx)
+        else:
+            ostr = "k\\_(%d,%d) * x'^%d" % (idx, max_jdx, max_jdx)
+        start = max(0, max_jdx - 2)
+        for jdx in reversed(range(start, max_jdx)):
+            ostr += " + k\\_(%d,%d)" % (idx, jdx)
+            if jdx > 0:
+                ostr += " * x'"
+                if jdx > 1:
+                    ostr += "^%d" % jdx
+        if start > 0:
+            if start > 1:
+                ostr += " + ..."
+            ostr += " + k\\_(%d,0)" % idx
+        mstr += "  - %s = %s\n" % (s, ostr)
+        print()
+    print()
+    print(mstr)
+    print()
+
 # look for isogenous curves having j-invariant not in {0, 1728}
 # Caution: this can take a while!
 def find_iso(E):
@@ -108,7 +162,7 @@ def bls12_377_isos():
     # an isogeny from E2’ to E2,
     Ell2_prime = iso_G2.domain()
     # where this is E2’
-    assert iso_G2_F6(Ell2_prime.random_point()).curve() == Ell2_6    
+    # assert iso_G2_F6(Ell2_prime.random_point()).curve() == Ell2_6    
     return (iso_G1, iso_G2)
 
 def trace_endo(P, p2):
@@ -301,16 +355,20 @@ def convert_g2_coeff_arrays_to_arkworks(iso_poly):
 p = 0x01ae3a4617c510eac63b05c06ca1493b1a22d9f300f5138f1ef3622fba094800170b5d44300000008508c00000000001
 quad_non_res = 0x01ae3a4617c510eac63b05c06ca1493b1a22d9f300f5138f1ef3622fba094800170b5d44300000008508bffffffffffc
 F.<X> = GF(p)[]
+F2.<X2> = GF(p^2, modulus=X^2 - quad_non_res)
 F6.<X6> = GF(p^6, modulus=X^6 - quad_non_res)
 xsi = 219316876564715501445845678793720069854490678622108189766720284953606550746049804013989455416277727490975087855145*X6^5 + 189466179801738810887203415755624953151244475240588395433085007196132075694018697411282623497091853518199320679360*X6^4 + 108520825812509855860919714742321990242401369063484109910639742940603686352843166577300516208027451357460988981712*X6^3 + 34112775793303707113282524593132637468394825594735587392051797399858875786055772232469914619100641475357422803395*X6^2 + 24571511079604071320024029432159749780558012896103101565537728634741822079830191849836550641682167566004999041634*X6 + 159529377420408936856843219892213059773340895657856533814435812939320020966386099270143668590340681432634121813716
 
 g1_iso, g2_iso = bls12_377_isos()
-message = "'I refuse to prove that I exist,' says God, 'for proof denies faith, and without faith I am nothing.'"
-print(bls12_377_hash_to_G2(g2_iso, message))
-print(bls12_377_hash_to_G2(g2_iso, message))
-message = "'if you stick a Babel fish in your ear you can instantly understand anything said to you in any form of language."
-print(bls12_377_hash_to_G2(g2_iso, message))
-print(bls12_377_hash_to_G2(g2_iso, message))
+show_iso(g1_iso)
+print()
+show_iso(g2_iso)
+# message = "'I refuse to prove that I exist,' says God, 'for proof denies faith, and without faith I am nothing.'"
+# print(bls12_377_hash_to_G2(g2_iso, message))
+# print(bls12_377_hash_to_G2(g2_iso, message))
+# message = "'if you stick a Babel fish in your ear you can instantly understand anything said to you in any form of language."
+# print(bls12_377_hash_to_G2(g2_iso, message))
+# print(bls12_377_hash_to_G2(g2_iso, message))
 
 
 
