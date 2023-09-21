@@ -6,9 +6,18 @@
 
 ### Features
 
+- [\#156](https://github.com/arkworks-rs/curves/pull/156) Add the bw6-767 curve.
+- [\#174](https://github.com/arkworks-rs/curves/pull/174) Add the "grumpkin" curve.
+
+
 ### Improvements
 
+- [\#156](https://github.com/arkworks-rs/curves/pull/156) The hard part of the final exponentiation for bw6-761 relocated from arkworks/algebra.
+- [\#158](https://github.com/arkworks-rs/curves/pull/158) Enabled GLV as the default scalar multiplication for BLS12-377, BLS12-381 and BN254.
+
 ### Bugfixes
+
+- [\#176](https://github.com/arkworks-rs/curves/pull/176) Non-canonical infinity point and bad flags in BLS12-381 serialization should fail.
 
 ## v0.4.0
 - [\#76](https://github.com/arkworks-rs/curves/pull/76) twisted Edwards parameters for bls12-377
